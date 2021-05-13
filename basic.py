@@ -134,7 +134,6 @@ KEYWORDS = [
   'FOR',
   'TO',
   'STEP',
-  'WHILE',
   'DEF',
   'THEN',
   'END',
@@ -449,15 +448,6 @@ class ForNode:
     self.pos_start = self.var_name_tok.pos_start
     self.pos_end = self.body_node.pos_end
 
-class WhileNode:
-  def __init__(self, condition_node, body_node, should_return_null):
-    self.condition_node = condition_node
-    self.body_node = body_node
-    self.should_return_null = should_return_null
-
-    self.pos_start = self.condition_node.pos_start
-    self.pos_end = self.body_node.pos_end
-
 class FuncDefNode:
   def __init__(self, var_name_tok, arg_name_toks, body_node, should_auto_return):
     self.var_name_tok = var_name_tok
@@ -640,7 +630,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'LET', 'IF', 'FOR', 'WHILE', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
       ))
     return res.success(expr)
 
@@ -678,7 +668,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'LET', 'IF', 'FOR', 'WHILE', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
       ))
 
     return res.success(node)
@@ -700,7 +690,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'DEF' or 'NOT'"
+        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'DEF' or 'NOT'"
       ))
 
     return res.success(node)
@@ -745,7 +735,7 @@ class Parser:
         if res.error:
           return res.failure(InvalidSyntaxError(
             self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected ')', 'LET', 'IF', 'FOR', 'WHILE', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+            "Expected ')', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
           ))
 
         while self.current_tok.type == TT_COMMA:
@@ -815,11 +805,6 @@ class Parser:
       if res.error: return res
       return res.success(for_expr)
 
-    elif tok.matches(TT_KEYWORD, 'WHILE'):
-      while_expr = res.register(self.while_expr())
-      if res.error: return res
-      return res.success(while_expr)
-
     elif tok.matches(TT_KEYWORD, 'DEF'):
       func_def = res.register(self.func_def())
       if res.error: return res
@@ -827,7 +812,7 @@ class Parser:
 
     return res.failure(InvalidSyntaxError(
       tok.pos_start, tok.pos_end,
-      "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'DEF'"
+      "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'DEF'"
     ))
 
   def list_expr(self):
@@ -852,7 +837,7 @@ class Parser:
       if res.error:
         return res.failure(InvalidSyntaxError(
           self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected ']', 'LET', 'IF', 'FOR', 'WHILE', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+          "Expected ']', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
         ))
 
       while self.current_tok.type == TT_COMMA:
@@ -1072,53 +1057,6 @@ class Parser:
     if res.error: return res
 
     return res.success(ForNode(var_name, start_value, end_value, step_value, body, False))
-
-  def while_expr(self):
-    res = ParseResult()
-
-    if not self.current_tok.matches(TT_KEYWORD, 'WHILE'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'WHILE'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    condition = res.register(self.expr())
-    if res.error: return res
-
-    if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'THEN'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type == TT_NEWLINE:
-      res.register_advancement()
-      self.advance()
-
-      body = res.register(self.statements())
-      if res.error: return res
-
-      if not self.current_tok.matches(TT_KEYWORD, 'END'):
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          f"Expected 'END'"
-        ))
-
-      res.register_advancement()
-      self.advance()
-
-      return res.success(WhileNode(condition, body, True))
-    
-    body = res.register(self.statement())
-    if res.error: return res
-
-    return res.success(WhileNode(condition, body, False))
 
   def func_def(self):
     res = ParseResult()
@@ -2068,33 +2006,6 @@ class Interpreter:
       value = res.register(self.visit(node.body_node, context))
       if res.should_return() and res.loop_should_continue == False and res.loop_should_break == False: return res
       
-      if res.loop_should_continue:
-        continue
-      
-      if res.loop_should_break:
-        break
-
-      elements.append(value)
-
-    return res.success(
-      Number.null if node.should_return_null else
-      List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
-    )
-
-  def visit_WhileNode(self, node, context):
-    res = RTResult()
-    elements = []
-
-    while True:
-      condition = res.register(self.visit(node.condition_node, context))
-      if res.should_return(): return res
-
-      if not condition.is_true():
-        break
-
-      value = res.register(self.visit(node.body_node, context))
-      if res.should_return() and res.loop_should_continue == False and res.loop_should_break == False: return res
-
       if res.loop_should_continue:
         continue
       
