@@ -1,10 +1,10 @@
 # This is a very useful piece of software
 
-FUN oopify(prefix)
+DEF oopify(prefix)
     RETURN prefix + "oop"
 END
 
-FUN join(elements, separator)
+DEF join(elements, separator)
 	LET result = ""
 	LET len = LEN(elements)
 
@@ -16,7 +16,7 @@ FUN join(elements, separator)
 	RETURN result
 END
 
-FUN map(elements, func)
+DEF map(elements, func)
 	LET new_elements = []
 
 	FOR i = 0 TO LEN(elements) THEN
