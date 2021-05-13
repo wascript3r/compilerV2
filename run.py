@@ -1,13 +1,13 @@
-import basic
+import useles
 
-result, err = basic.run('<stdin>', 'RUN("example.myopl")')
+result, err = useles.run('<stdin>', 'RUN("example.myopl")')
 if err:
     print(err.as_string())
 
 # while True:
-# 	text = input('basic > ')
+# 	text = input('useles > ')
 # 	if text.strip() == "": continue
-# 	result, error = basic.run('<stdin>', text)
+# 	result, error = useles.run('<stdin>', text)
 #
 # 	if error:
 # 		print(error.as_string())
