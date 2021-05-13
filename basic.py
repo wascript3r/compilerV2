@@ -110,8 +110,6 @@ TT_POW				= 'POW'
 TT_EQ					= 'EQ'
 TT_LPAREN   	= 'LPAREN'
 TT_RPAREN   	= 'RPAREN'
-TT_LSQUARE    = 'LSQUARE'
-TT_RSQUARE    = 'RSQUARE'
 TT_EE					= 'EE'
 TT_NE					= 'NE'
 TT_LT					= 'LT'
@@ -214,12 +212,6 @@ class Lexer:
         self.advance()
       elif self.current_char == ')':
         tokens.append(Token(TT_RPAREN, pos_start=self.pos))
-        self.advance()
-      elif self.current_char == '[':
-        tokens.append(Token(TT_LSQUARE, pos_start=self.pos))
-        self.advance()
-      elif self.current_char == ']':
-        tokens.append(Token(TT_RSQUARE, pos_start=self.pos))
         self.advance()
       elif self.current_char == '!':
         token, error = self.make_not_equals()
@@ -630,7 +622,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(' or 'NOT'"
       ))
     return res.success(expr)
 
@@ -668,7 +660,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(' or 'NOT'"
       ))
 
     return res.success(node)
@@ -690,7 +682,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'DEF' or 'NOT'"
+        "Expected int, float, identifier, '+', '-', '(', 'IF', 'FOR', 'DEF' or 'NOT'"
       ))
 
     return res.success(node)
@@ -735,7 +727,7 @@ class Parser:
         if res.error:
           return res.failure(InvalidSyntaxError(
             self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected ')', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+            "Expected ')', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(' or 'NOT'"
           ))
 
         while self.current_tok.type == TT_COMMA:
@@ -789,11 +781,6 @@ class Parser:
           self.current_tok.pos_start, self.current_tok.pos_end,
           "Expected ')'"
         ))
-
-    elif tok.type == TT_LSQUARE:
-      list_expr = res.register(self.list_expr())
-      if res.error: return res
-      return res.success(list_expr)
     
     elif tok.matches(TT_KEYWORD, 'IF'):
       if_expr = res.register(self.if_expr())
@@ -812,54 +799,7 @@ class Parser:
 
     return res.failure(InvalidSyntaxError(
       tok.pos_start, tok.pos_end,
-      "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'DEF'"
-    ))
-
-  def list_expr(self):
-    res = ParseResult()
-    element_nodes = []
-    pos_start = self.current_tok.pos_start.copy()
-
-    if self.current_tok.type != TT_LSQUARE:
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected '['"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type == TT_RSQUARE:
-      res.register_advancement()
-      self.advance()
-    else:
-      element_nodes.append(res.register(self.expr()))
-      if res.error:
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected ']', 'LET', 'IF', 'FOR', 'DEF', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
-        ))
-
-      while self.current_tok.type == TT_COMMA:
-        res.register_advancement()
-        self.advance()
-
-        element_nodes.append(res.register(self.expr()))
-        if res.error: return res
-
-      if self.current_tok.type != TT_RSQUARE:
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          f"Expected ',' or ']'"
-        ))
-
-      res.register_advancement()
-      self.advance()
-
-    return res.success(ListNode(
-      element_nodes,
-      pos_start,
-      self.current_tok.pos_end.copy()
+      "Expected int, float, identifier, '+', '-', '(', IF', 'FOR', 'DEF'"
     ))
 
   def if_expr(self):
@@ -1510,7 +1450,7 @@ class List(Value):
         )
     else:
       return None, Value.illegal_operation(self, other)
-  
+
   def copy(self):
     copy = List(self.elements)
     copy.set_pos(self.pos_start, self.pos_end)
@@ -1668,94 +1608,10 @@ class BuiltInFunction(BaseFunction):
     return RTResult().success(Number.true if is_number else Number.false)
   execute_is_string.arg_names = ["value"]
 
-  def execute_is_list(self, exec_ctx):
-    is_number = isinstance(exec_ctx.symbol_table.get("value"), List)
-    return RTResult().success(Number.true if is_number else Number.false)
-  execute_is_list.arg_names = ["value"]
-
   def execute_is_function(self, exec_ctx):
     is_number = isinstance(exec_ctx.symbol_table.get("value"), BaseFunction)
     return RTResult().success(Number.true if is_number else Number.false)
   execute_is_function.arg_names = ["value"]
-
-  def execute_append(self, exec_ctx):
-    list_ = exec_ctx.symbol_table.get("list")
-    value = exec_ctx.symbol_table.get("value")
-
-    if not isinstance(list_, List):
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        "First argument must be list",
-        exec_ctx
-      ))
-
-    list_.elements.append(value)
-    return RTResult().success(Number.null)
-  execute_append.arg_names = ["list", "value"]
-
-  def execute_pop(self, exec_ctx):
-    list_ = exec_ctx.symbol_table.get("list")
-    index = exec_ctx.symbol_table.get("index")
-
-    if not isinstance(list_, List):
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        "First argument must be list",
-        exec_ctx
-      ))
-
-    if not isinstance(index, Number):
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        "Second argument must be number",
-        exec_ctx
-      ))
-
-    try:
-      element = list_.elements.pop(index.value)
-    except:
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        'Element at this index could not be removed from list because index is out of bounds',
-        exec_ctx
-      ))
-    return RTResult().success(element)
-  execute_pop.arg_names = ["list", "index"]
-
-  def execute_extend(self, exec_ctx):
-    listA = exec_ctx.symbol_table.get("listA")
-    listB = exec_ctx.symbol_table.get("listB")
-
-    if not isinstance(listA, List):
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        "First argument must be list",
-        exec_ctx
-      ))
-
-    if not isinstance(listB, List):
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        "Second argument must be list",
-        exec_ctx
-      ))
-
-    listA.elements.extend(listB.elements)
-    return RTResult().success(Number.null)
-  execute_extend.arg_names = ["listA", "listB"]
-
-  def execute_len(self, exec_ctx):
-    list_ = exec_ctx.symbol_table.get("list")
-
-    if not isinstance(list_, List):
-      return RTResult().failure(RTError(
-        self.pos_start, self.pos_end,
-        "Argument must be list",
-        exec_ctx
-      ))
-
-    return RTResult().success(Number(len(list_.elements)))
-  execute_len.arg_names = ["list"]
 
   def execute_run(self, exec_ctx):
     fn = exec_ctx.symbol_table.get("fn")
@@ -1799,7 +1655,6 @@ BuiltInFunction.input_int   = BuiltInFunction("input_int")
 BuiltInFunction.clear       = BuiltInFunction("clear")
 BuiltInFunction.is_number   = BuiltInFunction("is_number")
 BuiltInFunction.is_string   = BuiltInFunction("is_string")
-BuiltInFunction.is_list     = BuiltInFunction("is_list")
 BuiltInFunction.is_function = BuiltInFunction("is_function")
 BuiltInFunction.append      = BuiltInFunction("append")
 BuiltInFunction.pop         = BuiltInFunction("pop")
@@ -2083,7 +1938,6 @@ global_symbol_table.set("CLEAR", BuiltInFunction.clear)
 global_symbol_table.set("CLS", BuiltInFunction.clear)
 global_symbol_table.set("IS_NUM", BuiltInFunction.is_number)
 global_symbol_table.set("IS_STR", BuiltInFunction.is_string)
-global_symbol_table.set("IS_LIST", BuiltInFunction.is_list)
 global_symbol_table.set("IS_FUN", BuiltInFunction.is_function)
 global_symbol_table.set("APPEND", BuiltInFunction.append)
 global_symbol_table.set("POP", BuiltInFunction.pop)

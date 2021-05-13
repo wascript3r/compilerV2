@@ -5,7 +5,7 @@ statement		: KEYWORD:RETURN expr?
 						: KEYWORD:BREAK
 						: expr
 
-expr        : KEYWORD:VAR IDENTIFIER EQ expr
+expr        : KEYWORD:LET IDENTIFIER EQ expr
             : comp-expr ((KEYWORD:AND|KEYWORD:OR) comp-expr)*
 
 comp-expr   : NOT comp-expr
@@ -24,13 +24,9 @@ call        : atom (LPAREN (expr (COMMA expr)*)? RPAREN)?
 
 atom        : INT|FLOAT|STRING|IDENTIFIER
             : LPAREN expr RPAREN
-            : list-expr
             : if-expr
             : for-expr
-            : while-expr
             : func-def
-
-list-expr   : LSQUARE (expr (COMMA expr)*)? RSQUARE
 
 if-expr     : KEYWORD:IF expr KEYWORD:THEN
               (statement if-expr-b|if-expr-c?)
@@ -49,11 +45,7 @@ for-expr    : KEYWORD:FOR IDENTIFIER EQ expr KEYWORD:TO expr
               statement
             | (NEWLINE statements KEYWORD:END)
 
-while-expr  : KEYWORD:WHILE expr KEYWORD:THEN
-              statement
-            | (NEWLINE statements KEYWORD:END)
-
-func-def    : KEYWORD:FUN IDENTIFIER?
+func-def    : KEYWORD:DEF IDENTIFIER?
               LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
               (ARROW expr)
             | (NEWLINE statements KEYWORD:END)

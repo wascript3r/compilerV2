@@ -1,33 +1,9 @@
-# This is a very useful piece of software
 
-DEF oopify(prefix)
-    RETURN prefix + "oop"
+DEF recur_fibo(n)
+   IF n <= 1 THEN
+       RETURN n
+   END
+   RETURN recur_fibo(n - 1) + recur_fibo(n - 2)
 END
 
-DEF join(elements, separator)
-	LET result = ""
-	LET len = LEN(elements)
-
-	FOR i = 0 TO len THEN
-		LET result = result + elements/i
-		IF i != len - 1 THEN LET result = result + separator
-	END
-
-	RETURN result
-END
-
-DEF map(elements, func)
-	LET new_elements = []
-
-	FOR i = 0 TO LEN(elements) THEN
-		APPEND(new_elements, func(elements/i))
-	END
-
-	RETURN new_elements
-END
-
-PRINT("Greetings universe!")
-
-FOR i = 0 TO 5 THEN
-	PRINT(join(map(["l", "sp"], oopify), ", "))
-END
+PRINT(recur_fibo(12))
