@@ -1604,6 +1604,18 @@ class BuiltInFunction(BaseFunction):
 
     return RTResult().success(history.elements[index.value])
   execute_history.arg_names = ['history', 'index']
+
+  def execute_history_len(self, exec_ctx):
+    history = exec_ctx.symbol_table.get('history')
+    if not isinstance(history, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "First argument must be a variable",
+        exec_ctx
+      ))
+
+    return RTResult().success(Number(len(history.elements)))
+  execute_history_len.arg_names = ['history']
   
   def execute_input(self, exec_ctx):
     text = input()
@@ -1674,6 +1686,7 @@ class BuiltInFunction(BaseFunction):
 BuiltInFunction.print       = BuiltInFunction("print")
 BuiltInFunction.to_string   = BuiltInFunction("to_string")
 BuiltInFunction.history     = BuiltInFunction("history")
+BuiltInFunction.history_len = BuiltInFunction("history_len")
 BuiltInFunction.input       = BuiltInFunction("input")
 BuiltInFunction.input_int   = BuiltInFunction("input_int")
 BuiltInFunction.is_number   = BuiltInFunction("is_number")
@@ -1931,9 +1944,10 @@ class Interpreter:
     if res.should_return(): return res
     value_to_call = value_to_call.copy().set_pos(node.pos_start, node.pos_end)
 
-    returnHistory = True if value_to_call.name == 'history' else False
+    returnHistory = True if (value_to_call.name in ['history', 'history_len']) else False
     for arg_node in node.arg_nodes:
       args.append(res.register(self.visit(arg_node, context, returnHistory)))
+      returnHistory = False
       if res.should_return(): return res
 
     return_value = res.register(value_to_call.execute(args))
@@ -1970,6 +1984,7 @@ global_symbol_table.set("MATH_PI", Number.math_PI)
 global_symbol_table.set("PRINT", BuiltInFunction.print)
 global_symbol_table.set("TO_STRING", BuiltInFunction.to_string)
 global_symbol_table.set("HISTORY", BuiltInFunction.history)
+global_symbol_table.set("HISTORY_LEN", BuiltInFunction.history_len)
 global_symbol_table.set("INPUT", BuiltInFunction.input)
 global_symbol_table.set("INPUT_INT", BuiltInFunction.input_int)
 global_symbol_table.set("IS_NUM", BuiltInFunction.is_number)

@@ -3,8 +3,19 @@ LET a = 6
 LET a = 7
 LET a = 8
 
-DEF print_history()
-    PRINT(HISTORY(a, -3))
+DEF print_history(index)
+    LET len = HISTORY_LEN(a)
+    PRINT("'a' history length: " + TO_STRING(len))
+
+    LET i = index
+
+    IF index < 0 THEN
+        LET i = len + index
+    END
+
+    LET i = TO_STRING(i)
+
+    PRINT("'a' history[" + i + "] = " + TO_STRING(HISTORY(a, index)))
 END
 
-print_history()
+print_history(0)
