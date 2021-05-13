@@ -1,21 +1,23 @@
 # This is a very useful piece of software
 
-FUN oopify(prefix) -> prefix + "oop"
+FUN oopify(prefix)
+    RETURN prefix + "oop"
+END
 
 FUN join(elements, separator)
-	VAR result = ""
-	VAR len = LEN(elements)
+	LET result = ""
+	LET len = LEN(elements)
 
 	FOR i = 0 TO len THEN
-		VAR result = result + elements/i
-		IF i != len - 1 THEN VAR result = result + separator
+		LET result = result + elements/i
+		IF i != len - 1 THEN LET result = result + separator
 	END
 
 	RETURN result
 END
 
 FUN map(elements, func)
-	VAR new_elements = []
+	LET new_elements = []
 
 	FOR i = 0 TO LEN(elements) THEN
 		APPEND(new_elements, func(elements/i))
