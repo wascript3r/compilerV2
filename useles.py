@@ -1576,6 +1576,34 @@ class BuiltInFunction(BaseFunction):
   def execute_to_string(self, exec_ctx):
     return RTResult().success(String(str(exec_ctx.symbol_table.get('value'))))
   execute_to_string.arg_names = ['value']
+
+  def execute_history(self, exec_ctx):
+    history = exec_ctx.symbol_table.get('history')
+    if not isinstance(history, List):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "First argument must be a variable",
+        exec_ctx
+      ))
+
+    index = exec_ctx.symbol_table.get('index')
+    if not isinstance(index, Number) or not isinstance(index.value, int):
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "Second argument must be an integer",
+        exec_ctx
+      ))
+
+    hLen = len(history.elements)
+    if index.value < -hLen or index.value >= hLen:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "History index is out of range",
+        exec_ctx
+      ))
+
+    return RTResult().success(history.elements[index.value])
+  execute_history.arg_names = ['history', 'index']
   
   def execute_input(self, exec_ctx):
     text = input()
@@ -1645,6 +1673,7 @@ class BuiltInFunction(BaseFunction):
 
 BuiltInFunction.print       = BuiltInFunction("print")
 BuiltInFunction.to_string   = BuiltInFunction("to_string")
+BuiltInFunction.history     = BuiltInFunction("history")
 BuiltInFunction.input       = BuiltInFunction("input")
 BuiltInFunction.input_int   = BuiltInFunction("input_int")
 BuiltInFunction.is_number   = BuiltInFunction("is_number")
@@ -1676,10 +1705,20 @@ class SymbolTable:
     value = self.symbols.get(name, None)
     if value == None and self.parent:
       return self.parent.get(name)
+    return None if value == None else value[-1]
+
+  def getHistory(self, name):
+    value = self.symbols.get(name, None)
+    if value == None and self.parent:
+      return self.parent.getHistory(name)
     return value
 
   def set(self, name, value):
-    self.symbols[name] = value
+    current = self.symbols.get(name, None);
+    if current == None:
+      self.symbols[name] = [value]
+    else:
+      self.symbols[name].append(value)
 
   def remove(self, name):
     del self.symbols[name]
@@ -1689,9 +1728,11 @@ class SymbolTable:
 #######################################
 
 class Interpreter:
-  def visit(self, node, context):
+  def visit(self, node, context, returnHistory = False):
     method_name = f'visit_{type(node).__name__}'
     method = getattr(self, method_name, self.no_visit_method)
+    if method_name == 'visit_VarAccessNode':
+      return method(node, context, returnHistory)
     return method(node, context)
 
   def no_visit_method(self, node, context):
@@ -1721,12 +1762,17 @@ class Interpreter:
       List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
     )
 
-  def visit_VarAccessNode(self, node, context):
+  def visit_VarAccessNode(self, node, context, returnHistory):
     res = RTResult()
     var_name = node.var_name_tok.value
-    value = context.symbol_table.get(var_name)
 
-    if not value:
+    value = None
+    if returnHistory:
+      value = List(context.symbol_table.getHistory(var_name))
+    else:
+      value = context.symbol_table.get(var_name)
+
+    if not value or (returnHistory and value.elements == None):
       return res.failure(RTError(
         node.pos_start, node.pos_end,
         f"'{var_name}' is not defined",
@@ -1885,8 +1931,9 @@ class Interpreter:
     if res.should_return(): return res
     value_to_call = value_to_call.copy().set_pos(node.pos_start, node.pos_end)
 
+    returnHistory = True if value_to_call.name == 'history' else False
     for arg_node in node.arg_nodes:
-      args.append(res.register(self.visit(arg_node, context)))
+      args.append(res.register(self.visit(arg_node, context, returnHistory)))
       if res.should_return(): return res
 
     return_value = res.register(value_to_call.execute(args))
@@ -1922,6 +1969,7 @@ global_symbol_table.set("TRUE", Number.true)
 global_symbol_table.set("MATH_PI", Number.math_PI)
 global_symbol_table.set("PRINT", BuiltInFunction.print)
 global_symbol_table.set("TO_STRING", BuiltInFunction.to_string)
+global_symbol_table.set("HISTORY", BuiltInFunction.history)
 global_symbol_table.set("INPUT", BuiltInFunction.input)
 global_symbol_table.set("INPUT_INT", BuiltInFunction.input_int)
 global_symbol_table.set("IS_NUM", BuiltInFunction.is_number)
