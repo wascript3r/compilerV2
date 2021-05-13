@@ -6,4 +6,19 @@ DEF recur_fibo(n)
    RETURN recur_fibo(n - 1) + recur_fibo(n - 2)
 END
 
+DEF test(fn)
+    IF (IS_FUN(fn)) THEN
+        PRINT("funkcija")
+        PRINT(fn(12))
+    ELSE
+        PRINT("ne funkcija")
+    END
+END
+
 PRINT(recur_fibo(12))
+
+FOR i = 0 TO 10 STEP 2 THEN
+    PRINT(i)
+END
+
+test(recur_fibo)
