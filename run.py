@@ -1,6 +1,11 @@
 import useles
+import sys
 
-result, err = useles.run('<stdin>', 'RUN("example.myopl")')
+if len(sys.argv) != 2:
+    print("Please specify the input script")
+    exit(1)
+
+result, err = useles.run('<stdin>', 'RUN("' + sys.argv[1] + '")')
 if err:
     print(err.as_string())
 
