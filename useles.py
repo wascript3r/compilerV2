@@ -1593,11 +1593,6 @@ class BuiltInFunction(BaseFunction):
     return RTResult().success(Number(number))
   execute_input_int.arg_names = []
 
-  def execute_clear(self, exec_ctx):
-    os.system('cls' if os.name == 'nt' else 'cls') 
-    return RTResult().success(Number.null)
-  execute_clear.arg_names = []
-
   def execute_is_number(self, exec_ctx):
     is_number = isinstance(exec_ctx.symbol_table.get("value"), Number)
     return RTResult().success(Number.true if is_number else Number.false)
@@ -1652,7 +1647,6 @@ BuiltInFunction.print       = BuiltInFunction("print")
 BuiltInFunction.print_ret   = BuiltInFunction("print_ret")
 BuiltInFunction.input       = BuiltInFunction("input")
 BuiltInFunction.input_int   = BuiltInFunction("input_int")
-BuiltInFunction.clear       = BuiltInFunction("clear")
 BuiltInFunction.is_number   = BuiltInFunction("is_number")
 BuiltInFunction.is_string   = BuiltInFunction("is_string")
 BuiltInFunction.is_function = BuiltInFunction("is_function")
@@ -1930,8 +1924,6 @@ global_symbol_table.set("PRINT", BuiltInFunction.print)
 global_symbol_table.set("PRINT_RET", BuiltInFunction.print_ret)
 global_symbol_table.set("INPUT", BuiltInFunction.input)
 global_symbol_table.set("INPUT_INT", BuiltInFunction.input_int)
-global_symbol_table.set("CLEAR", BuiltInFunction.clear)
-global_symbol_table.set("CLS", BuiltInFunction.clear)
 global_symbol_table.set("IS_NUM", BuiltInFunction.is_number)
 global_symbol_table.set("IS_STR", BuiltInFunction.is_string)
 global_symbol_table.set("IS_FUN", BuiltInFunction.is_function)
