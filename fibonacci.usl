@@ -1,0 +1,22 @@
+PRINT("Įveskite n:")
+LET num = INPUT_INT()
+
+DEF fibonacci(n)
+    IF n <= 1 THEN
+        RETURN n
+    END
+
+    LET fib = 0
+    LET fib = 1
+
+    FOR i = 2 TO (n + 1) THEN
+        LET fib = HISTORY(fib, i - 2) + HISTORY(fib, i - 1)
+    END
+
+    RETURN fib
+END
+
+LET rez = fibonacci(num)
+
+PRINT("Rezultatas:")
+PRINT(rez)

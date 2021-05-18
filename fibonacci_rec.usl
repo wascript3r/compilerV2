@@ -1,0 +1,15 @@
+PRINT("Įveskite n:")
+LET num = INPUT_INT()
+
+DEF fibonacci(n)
+    IF n <= 1 THEN
+        RETURN n
+    END
+
+    RETURN fibonacci(n - 1) + fibonacci(n - 2)
+END
+
+LET rez = fibonacci(num)
+
+PRINT("Rezultatas:")
+PRINT(rez)
